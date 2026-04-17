@@ -1,0 +1,21 @@
+language = "typescript" # Must be typescript or python
+description = "Default TypeScript project, seeded with foobar example components."
+post_install_print = """
+Deploy with 514 Hosting
+
+514 Hosting is a branch-native control plane for cloud OLAP workloads.
+
+https://fiveonefour.boreal.cloud
+
+---------------------------------------------------------
+
+📂 Go to your project directory:
+    $ cd {project_dir}
+
+📦 Install Dependencies:
+    $ npm install
+
+🛠️ Start dev server:
+    $ moose dev
+"""
+default_sloan_telemetry="standard"

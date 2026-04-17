@@ -1,0 +1,12 @@
+.moose
+node_modules
+dist
+coverage
+.ts-node
+.turbo
+# Moose / Sloan / Cursor folders
+.sloan
+.cursor
+# Environment files with secrets
+.env.local
+# Node
