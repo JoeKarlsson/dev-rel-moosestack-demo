@@ -250,6 +250,37 @@ def extract_ai_sources(d: dict) -> dict[str, int]:
     return sources
 
 
+def extract_health_score(d: dict) -> int:
+    hs = d.get("health_score", {})
+    if isinstance(hs, dict):
+        return int(hs.get("total") or 0)
+    if isinstance(hs, (int, float)):
+        return int(hs)
+    return 0
+
+
+def extract_aio(d: dict) -> dict:
+    aio = d.get("aio_analysis", {})
+    if not aio:
+        return {"lost_clicks": 0, "pct": 0.0}
+    return {
+        "lost_clicks": int(aio.get("estimated_lost_clicks") or 0),
+        "pct": float(aio.get("affected_pct") or 0.0),
+    }
+
+
+def extract_ranking_changes(d: dict) -> dict:
+    rc = d.get("ranking_changes", {})
+    if not rc:
+        return {"improved": 0, "declined": 0}
+    imp = rc.get("improved", [])
+    dec = rc.get("declined", [])
+    return {
+        "improved": len(imp) if isinstance(imp, list) else int(imp or 0),
+        "declined": len(dec) if isinstance(dec, list) else int(dec or 0),
+    }
+
+
 def normalize_snapshot_date(d: dict, filename: str) -> str:
     """Extract ISO date string from snapshot metadata or filename."""
     date_str = d.get("_snapshot_date") or d.get("_date")
@@ -266,6 +297,8 @@ def build_snapshot_record(d: dict, filename: str) -> dict:
     hs = extract_hubspot(d)
     plat = extract_platform(d)
     ai_sources = extract_ai_sources(d)
+    aio = extract_aio(d)
+    rc = extract_ranking_changes(d)
     ai_total = int(d.get("ai_referrals", {}).get("total")
                    or d.get("ai_referrals", {}).get("total_w1")
                    or d.get("ai_referrals", {}).get("total_m1")
@@ -292,6 +325,11 @@ def build_snapshot_record(d: dict, filename: str) -> dict:
         "platformWau": plat["wau"],
         "platformNewTeams": plat["new_teams"],
         "aiTotalReferrals": ai_total,
+        "healthScore": extract_health_score(d),
+        "aioLostClicks": aio["lost_clicks"],
+        "aioPct": aio["pct"],
+        "rankingImproved": rc["improved"],
+        "rankingDeclined": rc["declined"],
         "dataSource": "backfill",
     }
 

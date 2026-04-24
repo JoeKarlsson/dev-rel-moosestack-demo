@@ -321,3 +321,52 @@ export const DevRelHealthApi = new Api<DevRelHealthParams, DevRelHealthResponse>
     return result;
   }
 );
+
+// ── /api/system-stats ─────────────────────────────────────────────────────
+
+interface SystemStatsParams {}
+
+interface TableStat {
+  table: string;
+  rows: number;
+  compressed_bytes: number;
+}
+
+interface SystemStatsResponse {
+  asOf: string;
+  tables: TableStat[];
+  totalRows: number;
+  totalBytes: number;
+}
+
+export const SystemStatsApi = new Api<SystemStatsParams, SystemStatsResponse>(
+  "system-stats",
+  async (_params, { client, sql }) => {
+    const cursor = await client.query.execute<TableStat>(
+      sql.statement`SELECT
+        name as table,
+        total_rows as rows,
+        total_bytes as compressed_bytes
+      FROM system.tables
+      WHERE database = currentDatabase()
+        AND name IN (
+          'GithubProcessed',
+          'WeeklySnapshot',
+          'AiReferralEvent',
+          'GithubDailyMetric',
+          'MarketingWeeklySummary',
+          'AiSourceWeekly'
+        )
+      ORDER BY total_rows DESC`
+    );
+
+    const tables: TableStat[] = await cursor.json();
+
+    return {
+      asOf: new Date().toISOString(),
+      tables,
+      totalRows: tables.reduce((s, t) => s + t.rows, 0),
+      totalBytes: tables.reduce((s, t) => s + t.compressed_bytes, 0),
+    };
+  }
+);

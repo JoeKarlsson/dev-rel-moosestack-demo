@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How It Works — Dev Rel Command Center</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 16px 32px;
+      border-bottom: 1px solid #21262d;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #1f6feb;
+      color: #fff;
+      font-weight: 500;
+    }
+    .nav-link {
+      margin-left: auto;
+      font-size: 12px;
+      color: #8b949e;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .nav-link:hover { color: #e6edf3; border-color: #58a6ff; }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 32px;
+      display: grid;
+      gap: 40px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 20px 0;
+    }
+    .hero h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p { color: #8b949e; font-size: 15px; max-width: 600px; margin: 0 auto; }
+
+    section h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #e6edf3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    section h2::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 18px;
+      background: #58a6ff;
+      border-radius: 2px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 20px 24px;
+    }
+    .card p { color: #8b949e; font-size: 14px; margin-bottom: 12px; }
+    .card p:last-child { margin-bottom: 0; }
+    .card strong { color: #e6edf3; }
+
+    /* Flow diagram */
+    .flow {
+      display: grid;
+      gap: 0;
+    }
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 4px;
+    }
+    .flow-box {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      color: #e6edf3;
+    }
+    .flow-box.source { background: #0d2d0d; border-color: #3fb950; color: #3fb950; }
+    .flow-box.moose  { background: #1c1c3d; border-color: #a78bfa; color: #a78bfa; }
+    .flow-box.ch     { background: #3d2c00; border-color: #d29922; color: #d29922; }
+    .flow-box.api    { background: #0d1b2d; border-color: #58a6ff; color: #58a6ff; }
+    .flow-box.ui     { background: #1a1a1a; border-color: #8b949e; color: #c9d1d9; }
+    .flow-arrow {
+      color: #30363d;
+      font-size: 18px;
+      padding: 0 6px;
+      user-select: none;
+    }
+    .flow-label {
+      font-size: 10px;
+      color: #8b949e;
+      padding-left: 8px;
+    }
+
+    /* Primitive grid */
+    .primitives {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .primitive {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      padding: 14px 16px;
+    }
+    .primitive .name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #58a6ff;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      margin-bottom: 6px;
+    }
+    .primitive .desc { font-size: 12px; color: #8b949e; }
+
+    /* Code block */
+    pre {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 12px;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      color: #e6edf3;
+      line-height: 1.5;
+    }
+    .kw { color: #ff7b72; }
+    .ty { color: #79c0ff; }
+    .st { color: #a5d6ff; }
+    .cm { color: #8b949e; font-style: italic; }
+    .fn { color: #d2a8ff; }
+    .kn { color: #3fb950; }
+
+    /* Callout */
+    .callout {
+      background: #0d1b2d;
+      border-left: 3px solid #58a6ff;
+      border-radius: 0 6px 6px 0;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: #8b949e;
+    }
+    .callout strong { color: #58a6ff; }
+
+    /* Why table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { padding: 8px 12px; text-align: left; color: #8b949e; font-weight: 600; border-bottom: 1px solid #21262d; font-size: 11px; text-transform: uppercase; }
+    td { padding: 10px 12px; border-bottom: 1px solid #21262d; color: #c9d1d9; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { color: #58a6ff; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 12px; white-space: nowrap; }
+
+    .timing { color: #3fb950; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Dev Rel Command Center</h1>
+  <span class="tag">MooseStack + ClickHouse</span>
+  <a href="index.html" class="nav-link">← Dashboard</a>
+</header>
+
+<main>
+  <div class="hero">
+    <h2>How This Works</h2>
+    <p>Two data layers — real-time GitHub events and historical marketing snapshots — unified in ClickHouse and served through typed TypeScript APIs. Built entirely on MooseStack.</p>
+  </div>
+
+  <!-- Architecture -->
+  <section>
+    <h2>Architecture Overview</h2>
+    <div class="card">
+      <div class="flow">
+        <div class="flow-row">
+          <span class="flow-box source">GitHub webhook</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box moose">Flask adapter :3001</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box moose">POST /ingest/GithubEvent</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box moose">Redpanda stream</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box moose">Transform</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box ch">GithubProcessed</span>
+          <span class="flow-label timing">~300ms end-to-end</span>
+        </div>
+        <div class="flow-row">
+          <span class="flow-box source">Python backfill</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box moose">POST /ingest/WeeklySnapshot</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box moose">Redpanda stream</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box ch">WeeklySnapshot</span>
+          <span class="flow-label">18 weeks of history</span>
+        </div>
+        <div class="flow-row">
+          <span class="flow-box ch">ClickHouse tables</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box ch">Materialized Views</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box api">MooseStack APIs</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-box ui">Dashboard</span>
+          <span class="flow-label">polls every 10–30s</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MooseStack primitives -->
+  <section>
+    <h2>MooseStack Primitives Used</h2>
+    <div class="primitives">
+      <div class="primitive">
+        <div class="name">IngestPipeline</div>
+        <div class="desc">A TypeScript interface becomes an HTTP ingest endpoint, Redpanda topic, and ClickHouse table simultaneously. No config files.</div>
+      </div>
+      <div class="primitive">
+        <div class="name">stream.addTransform</div>
+        <div class="desc">Fan-out between streams with typed transforms. GitHub raw events are normalized into GithubProcessed with dead-letter queue support.</div>
+      </div>
+      <div class="primitive">
+        <div class="name">MaterializedView</div>
+        <div class="desc">Pre-aggregated ClickHouse views defined in typed SQL. GithubDailyMV buckets events by day; AiSourceWeeklyMV aggregates AI referrals by source.</div>
+      </div>
+      <div class="primitive">
+        <div class="name">Api</div>
+        <div class="desc">Consumption endpoints with typed request params and response shapes. MooseCache provides cache-aside with configurable TTLs (30s–1h).</div>
+      </div>
+      <div class="primitive">
+        <div class="name">Workflow + Task</div>
+        <div class="desc">Temporal-backed scheduled jobs. snapshotSync runs weekly (Sunday midnight UTC) to refresh the marketing snapshot from live data sources.</div>
+      </div>
+      <div class="primitive">
+        <div class="name">DeadLetterQueue</div>
+        <div class="desc">Failed transforms land in GithubDeadLetter table with the original event and error message. Observable, replayable.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key code pattern -->
+  <section>
+    <h2>The Core Insight: Type = Schema = API</h2>
+    <div class="card">
+      <p>In MooseStack, a TypeScript interface is the single source of truth. Define it once — the framework generates the ClickHouse table DDL, the Redpanda topic, the HTTP ingest endpoint, and validates incoming JSON against the type at the boundary.</p>
+    </div>
+    <pre><span class="cm">// One interface declaration creates the entire pipeline:</span>
+<span class="kw">export interface</span> <span class="ty">GithubProcessed</span> {
+  <span class="fn">eventId</span>: <span class="ty">Key</span>&lt;<span class="st">string</span>&gt;;   <span class="cm">// → PRIMARY KEY in ClickHouse</span>
+  <span class="fn">timestamp</span>: <span class="ty">DateTime</span>;       <span class="cm">// → DateTime('UTC') column</span>
+  <span class="fn">eventType</span>: <span class="st">string</span>;
+  <span class="fn">repo</span>: <span class="st">string</span>;
+  <span class="fn">actor</span>: <span class="st">string</span>;
+  <span class="fn">action</span>: <span class="st">string</span>;
+  <span class="fn">issueNumber</span>: <span class="st">number</span>;      <span class="cm">// → Float64 in ClickHouse</span>
+  <span class="fn">issueTitle</span>: <span class="st">string</span>;
+  <span class="fn">forkFullName</span>: <span class="st">string</span>;
+}
+
+<span class="kw">export const</span> <span class="fn">GithubProcessedPipeline</span> = <span class="kw">new</span> <span class="ty">IngestPipeline</span>&lt;<span class="ty">GithubProcessed</span>&gt;(
+  <span class="st">"GithubProcessed"</span>,
+  {
+    table: { orderByFields: [<span class="st">"eventId"</span>, <span class="st">"timestamp"</span>, <span class="st">"eventType"</span>] },
+    stream: <span class="kn">true</span>,
+    ingestApi: <span class="kn">false</span>,  <span class="cm">// internal only — written via transform</span>
+  }
+);</pre>
+    <div class="callout" style="margin-top:12px">
+      <strong>No YAML. No config files. No separate schema registry.</strong> Add a field to the interface and MooseStack issues the <code>ALTER TABLE ADD COLUMN</code> automatically on the next <code>moose dev</code> reload.
+    </div>
+  </section>
+
+  <!-- Data layers -->
+  <section>
+    <h2>Two Data Layers, One Query Engine</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Data</th>
+          <th>Update Frequency</th>
+          <th>Latency</th>
+          <th>Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Real-time</td>
+          <td>GitHub stars, forks, issues, PRs</td>
+          <td>Per event (seconds)</td>
+          <td class="timing">~300ms</td>
+          <td>Leading indicators — stars predict traffic spikes 3–7 days out</td>
+        </tr>
+        <tr>
+          <td>Historical</td>
+          <td>Traffic, GSC, AI referrals, HubSpot MQLs, SEO health</td>
+          <td>Weekly snapshots (18 weeks)</td>
+          <td>Batch</td>
+          <td>Trailing indicators — business outcomes from content and SEO work</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:12px">
+      <strong>ClickHouse handles both simultaneously.</strong> The <code>/api/devrel-health</code> endpoint runs a real-time 7-day GitHub count and a historical marketing snapshot query in the same request. Columnar storage means both return in milliseconds regardless of total row count.
+    </div>
+  </section>
+
+  <!-- Why ClickHouse -->
+  <section>
+    <h2>Why ClickHouse</h2>
+    <div class="card">
+      <p><strong>Columnar storage</strong> — analytics queries scan only the columns they need. The AI referrals aggregation across 18 weeks reads 2 columns, not 25. That's why it runs in single-digit milliseconds.</p>
+      <p><strong>Materialized Views update on insert</strong> — when a new GitHub event lands in <code>GithubProcessed</code>, ClickHouse automatically updates <code>GithubDailyMetric</code> (the star velocity pre-aggregate). The API reads the MV, not the raw table.</p>
+      <p><strong>Mixed workload</strong> — streaming inserts and analytical queries on the same engine, no ETL step, no separate OLAP warehouse. One port, one connection string, one database.</p>
+      <p><strong>Compression</strong> — the same data that would be ~50KB in Postgres sits at 14KB in ClickHouse. At scale, this compounds: 100M rows that would be ~40GB in row storage compress to ~4GB.</p>
+    </div>
+  </section>
+
+  <!-- SEO health data -->
+  <section>
+    <h2>SEO Intelligence Layer</h2>
+    <div class="card">
+      <p>The 18 snapshot files contain richer SEO data beyond raw traffic numbers: <strong>health scores</strong> (composite 0–100 across traffic, ranking, indexing, content, CWV, conversion), <strong>AIO impact</strong> (estimated clicks lost to Google's AI Overviews), and <strong>ranking movement</strong> (which keywords improved or declined week-over-week).</p>
+      <p>These are ingested as fields on <code>WeeklySnapshot</code> alongside the standard metrics. The same ClickHouse table powers both the traffic trend charts and the SEO intelligence KPIs — no separate system.</p>
+      <p><strong>AIO (AI Overview) tracking</strong> is particularly meaningful in 2026: when a query triggers an AI Overview, organic CTR drops sharply even for position-1 results. The <code>aioLostClicks</code> field tracks estimated weekly click loss, which is a leading indicator of GEO (Generative Engine Optimization) pressure.</p>
+    </div>
+  </section>
+
+  <!-- Schema normalization -->
+  <section>
+    <h2>Schema Normalization Challenge</h2>
+    <div class="card">
+      <p>The 18 JSON snapshots evolved through <strong>6+ different structural variants</strong> as the collection scripts improved. A simple <code>d["plausible"]["visitors"]</code> access would fail on half the files.</p>
+      <p>The backfill script uses a priority-chain extraction pattern for each metric — it tries field paths in order of likelihood and falls back gracefully:</p>
+    </div>
+    <pre><span class="cm"># visitors: try 5 different locations across schema versions</span>
+<span class="kw">for</span> path <span class="kw">in</span> [
+  <span class="kw">lambda</span> p: p.get(<span class="st">"visitors"</span>),
+  <span class="kw">lambda</span> p: p.get(<span class="st">"agg_w1"</span>, {}).get(<span class="st">"visitors"</span>),
+  <span class="kw">lambda</span> p: p.get(<span class="st">"aggregate"</span>, {}).get(<span class="st">"visitors"</span>),
+  <span class="kw">lambda</span> p: p.get(<span class="st">"aggregate_m1"</span>, {}).get(<span class="st">"visitors"</span>),
+  <span class="kw">lambda</span> p: p.get(<span class="st">"visitors_w1"</span>),
+]:
+  v = path(plausible_block)
+  <span class="kw">if</span> v <span class="kw">is not None</span>:
+    <span class="kw">return</span> <span class="fn">int</span>(v)</pre>
+    <div class="callout" style="margin-top:12px">
+      This is a real-world data engineering pattern. Production data sources evolve. Robust extraction chains mean new schema versions are additive — you add a new fallback without breaking existing parsers.
+    </div>
+  </section>
+
+  <!-- GitHub webhook adapter -->
+  <section>
+    <h2>GitHub Webhook Adapter</h2>
+    <div class="card">
+      <p>GitHub puts the event type (<code>star</code>, <code>fork</code>, <code>issues</code>) in the <strong>HTTP header</strong> (<code>X-GitHub-Event</code>), not the JSON body. MooseStack's ingest endpoint only sees the JSON body.</p>
+      <p>Solution: a thin Flask proxy on port 3001 extracts the header and injects it into the payload before forwarding to MooseStack:</p>
+    </div>
+    <pre><span class="cm"># webhook_adapter.py — 20 lines, solves the impedance mismatch</span>
+<span class="fn">@app.route</span>(<span class="st">'/webhook'</span>, methods=[<span class="st">'POST'</span>])
+<span class="kw">def</span> <span class="fn">relay</span>():
+  event_type = request.headers.get(<span class="st">'X-GitHub-Event'</span>, <span class="st">'unknown'</span>)
+  delivery_id = request.headers.get(<span class="st">'X-GitHub-Delivery'</span>, str(uuid4()))
+  body = request.get_json(force=<span class="kn">True</span>) <span class="kw">or</span> {}
+  actor = (body.get(<span class="st">'sender'</span>) <span class="kw">or</span> {}).get(<span class="st">'login'</span>, <span class="st">'unknown'</span>)
+
+  payload = {
+    <span class="st">'deliveryId'</span>: delivery_id,
+    <span class="st">'timestamp'</span>: datetime.now(timezone.utc).isoformat(),
+    <span class="st">'eventType'</span>: event_type,
+    <span class="st">'repo'</span>: (body.get(<span class="st">'repository'</span>) <span class="kw">or</span> {}).get(<span class="st">'full_name'</span>, <span class="st">''</span>),
+    <span class="st">'actor'</span>: actor,
+    <span class="st">'action'</span>: body.get(<span class="st">'action'</span>, <span class="st">'created'</span>),
+    <span class="st">'rawPayload'</span>: json.dumps(body),
+  }
+  <span class="cm"># Forward to MooseStack ingest endpoint</span>
+  requests.post(<span class="st">'http://localhost:4000/ingest/GithubEvent'</span>, json=payload)</pre>
+  </section>
+
+  <!-- APIs & caching -->
+  <section>
+    <h2>APIs &amp; Caching Strategy</h2>
+    <table>
+      <thead>
+        <tr><th>Endpoint</th><th>Cache TTL</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>/api/github-signals</td>
+          <td class="timing">30s</td>
+          <td>Near real-time — events land within seconds, 30s is a reasonable lag for the live feed</td>
+        </tr>
+        <tr>
+          <td>/api/devrel-health</td>
+          <td class="timing">60s</td>
+          <td>KPI summary — fresh enough for a dashboard, avoids hammering ClickHouse on every poll</td>
+        </tr>
+        <tr>
+          <td>/api/marketing-trends</td>
+          <td class="timing">1h</td>
+          <td>Weekly data — a 1h cache is fine; data changes once per week in production</td>
+        </tr>
+        <tr>
+          <td>/api/system-stats</td>
+          <td class="timing">none</td>
+          <td>ClickHouse system tables are cheap to query; shows live row counts as data lands</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+</body>
+</html>

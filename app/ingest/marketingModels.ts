@@ -27,6 +27,14 @@ export interface WeeklySnapshot {
   platformNewTeams: number;
   // AI referral aggregate
   aiTotalReferrals: number;
+  // SEO health score (0-100 composite)
+  healthScore: number;
+  // AI Overview impact — estimated organic clicks lost to Google AIO
+  aioLostClicks: number;
+  aioPct: number; // % of queries suspected affected by AIO
+  // Ranking movement (keyword count)
+  rankingImproved: number;
+  rankingDeclined: number;
   // Ingestion metadata
   dataSource: string; // "backfill" | "weekly_workflow"
 }

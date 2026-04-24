@@ -16,13 +16,12 @@
     }
 
     header {
-      padding: 20px 32px;
+      padding: 16px 32px;
       border-bottom: 1px solid #21262d;
       display: flex;
       align-items: center;
       gap: 12px;
     }
-
     header h1 { font-size: 18px; font-weight: 600; }
     header .tag {
       font-size: 11px;
@@ -37,59 +36,108 @@
       border-radius: 50%;
       background: #3fb950;
       animation: pulse 2s infinite;
-      margin-left: auto;
     }
+    nav-link {
+      display: block;
+    }
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .nav-link {
+      font-size: 12px;
+      color: #8b949e;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .nav-link:hover { color: #e6edf3; border-color: #58a6ff; }
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
     }
 
-    main { padding: 24px 32px; display: grid; gap: 24px; }
+    main { padding: 24px 32px; display: grid; gap: 20px; }
+
+    /* Section label */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 0;
+    }
 
     /* KPI row */
     .kpi-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
     }
     .kpi {
       background: #161b22;
       border: 1px solid #21262d;
       border-radius: 8px;
-      padding: 16px;
+      padding: 14px 16px;
     }
     .kpi .label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: .05em; }
-    .kpi .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+    .kpi .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
     .kpi .sub { font-size: 11px; color: #8b949e; margin-top: 2px; }
     .kpi.live .label::after { content: " ●"; color: #3fb950; }
+    .kpi.warn .value { color: #d29922; }
+    .kpi.danger .value { color: #f85149; }
+    .kpi.good .value { color: #3fb950; }
+
+    /* Health score bar */
+    .health-bar-wrap { margin-top: 6px; height: 4px; background: #21262d; border-radius: 2px; overflow: hidden; }
+    .health-bar { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 
     /* Two-column charts */
-    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
 
     .card {
       background: #161b22;
       border: 1px solid #21262d;
       border-radius: 8px;
-      padding: 20px;
+      padding: 18px 20px;
     }
-    .card h2 { font-size: 13px; font-weight: 600; margin-bottom: 16px; color: #c9d1d9; }
-    .card canvas { max-height: 220px; }
+    .card h2 { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: #c9d1d9; }
+    .card canvas { max-height: 200px; }
+
+    /* Scale / infra panel */
+    .scale-panel {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .scale-stat .label { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; }
+    .scale-stat .value { font-size: 22px; font-weight: 700; color: #58a6ff; font-variant-numeric: tabular-nums; }
+    .scale-stat .sub { font-size: 10px; color: #8b949e; margin-top: 1px; }
 
     /* Live feed */
     .feed {
       background: #161b22;
       border: 1px solid #21262d;
       border-radius: 8px;
-      padding: 20px;
+      padding: 18px 20px;
     }
-    .feed h2 { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: #c9d1d9; }
-    #event-list { list-style: none; max-height: 220px; overflow-y: auto; }
+    .feed h2 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #c9d1d9; }
+    #event-list { list-style: none; max-height: 200px; overflow-y: auto; }
     #event-list li {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 0;
+      padding: 7px 0;
       border-bottom: 1px solid #21262d;
       font-size: 13px;
     }
@@ -108,7 +156,7 @@
     .event-actor { color: #79c0ff; }
     .event-time  { color: #8b949e; font-size: 11px; margin-left: auto; }
 
-    #last-updated { font-size: 11px; color: #8b949e; padding: 8px 32px 16px; }
+    #last-updated { font-size: 11px; color: #8b949e; padding: 6px 32px 16px; }
   </style>
 </head>
 <body>
@@ -116,11 +164,15 @@
 <header>
   <h1>Dev Rel Command Center</h1>
   <span class="tag">MooseStack + ClickHouse</span>
-  <div id="status-dot" title="Live"></div>
+  <div class="header-right">
+    <div id="status-dot" title="Live"></div>
+    <a href="how-it-works.html" class="nav-link">How It Works →</a>
+  </div>
 </header>
 
 <main>
-  <!-- KPI row -->
+  <!-- GitHub KPIs -->
+  <div class="section-label">GitHub — Real-time</div>
   <div class="kpi-row">
     <div class="kpi live">
       <div class="label">Stars (7d)</div>
@@ -132,6 +184,21 @@
       <div class="value" id="kpi-forks">—</div>
       <div class="sub">GitHub</div>
     </div>
+    <div class="kpi live">
+      <div class="label">Issues (7d)</div>
+      <div class="value" id="kpi-issues">—</div>
+      <div class="sub">Opened</div>
+    </div>
+    <div class="kpi live">
+      <div class="label">Events Tracked</div>
+      <div class="value" id="kpi-events">—</div>
+      <div class="sub">All time</div>
+    </div>
+  </div>
+
+  <!-- Marketing KPIs -->
+  <div class="section-label">Marketing — Weekly Snapshot</div>
+  <div class="kpi-row">
     <div class="kpi">
       <div class="label">Weekly Visitors</div>
       <div class="value" id="kpi-visitors">—</div>
@@ -161,6 +228,67 @@
       <div class="label">Platform WAU</div>
       <div class="value" id="kpi-wau">—</div>
       <div class="sub">Weekly active users</div>
+    </div>
+  </div>
+
+  <!-- SEO Health KPIs -->
+  <div class="section-label">SEO Intelligence</div>
+  <div class="kpi-row">
+    <div class="kpi" id="kpi-health-card">
+      <div class="label">SEO Health Score</div>
+      <div class="value" id="kpi-health">—</div>
+      <div class="health-bar-wrap"><div class="health-bar" id="health-bar" style="width:0%"></div></div>
+      <div class="sub" id="kpi-health-label">Latest audit</div>
+    </div>
+    <div class="kpi">
+      <div class="label">AIO Lost Clicks</div>
+      <div class="value" id="kpi-aio">—</div>
+      <div class="sub">Est. clicks lost to AI overviews</div>
+    </div>
+    <div class="kpi">
+      <div class="label">AIO Impact</div>
+      <div class="value" id="kpi-aio-pct">—</div>
+      <div class="sub">% queries affected</div>
+    </div>
+    <div class="kpi good">
+      <div class="label">Rankings Improved</div>
+      <div class="value" id="kpi-rank-up">—</div>
+      <div class="sub">Keywords moved up</div>
+    </div>
+    <div class="kpi danger">
+      <div class="label">Rankings Declined</div>
+      <div class="value" id="kpi-rank-down">—</div>
+      <div class="sub">Keywords moved down</div>
+    </div>
+  </div>
+
+  <!-- Scale / Infra panel -->
+  <div class="section-label">ClickHouse — Live Scale</div>
+  <div class="scale-panel" id="scale-panel">
+    <div class="scale-stat">
+      <div class="label">Total Rows</div>
+      <div class="value" id="stat-rows">—</div>
+      <div class="sub">across all tables</div>
+    </div>
+    <div class="scale-stat">
+      <div class="label">Compressed Size</div>
+      <div class="value" id="stat-bytes">—</div>
+      <div class="sub">on disk</div>
+    </div>
+    <div class="scale-stat">
+      <div class="label">GitHub Events</div>
+      <div class="value" id="stat-gh">—</div>
+      <div class="sub">GithubProcessed table</div>
+    </div>
+    <div class="scale-stat">
+      <div class="label">Marketing Rows</div>
+      <div class="value" id="stat-mkt">—</div>
+      <div class="sub">WeeklySnapshot + AiReferral</div>
+    </div>
+    <div class="scale-stat">
+      <div class="label">MV Rows</div>
+      <div class="value" id="stat-mv">—</div>
+      <div class="sub">Pre-aggregated views</div>
     </div>
   </div>
 
@@ -203,14 +331,21 @@ const COLORS = {
   'default':        '#58a6ff',
 };
 
-// Chart instances
 let starChart, trafficChart, positionChart, aiChart;
 let seenEventIds = new Set();
 
 function fmt(n) {
   if (n == null || n === '') return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
   return String(n);
+}
+
+function fmtBytes(b) {
+  if (!b) return '—';
+  if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MB';
+  if (b >= 1024) return (b / 1024).toFixed(1) + ' KB';
+  return b + ' B';
 }
 
 function timeSince(iso) {
@@ -225,7 +360,13 @@ function badgeClass(eventType) {
   return ['star','fork','issues'].includes(eventType) ? eventType : 'default';
 }
 
-// ── Chart helpers ──────────────────────────────────────────────────────────
+function healthColor(score) {
+  if (score >= 75) return '#3fb950';
+  if (score >= 50) return '#d29922';
+  return '#f85149';
+}
+
+// ── Chart helpers ─────────────────────────────────────────────────────────
 
 function makeLineChart(id, label, color) {
   const ctx = document.getElementById(id).getContext('2d');
@@ -259,7 +400,7 @@ function makeBarChart(id) {
   });
 }
 
-// ── Data fetchers ──────────────────────────────────────────────────────────
+// ── Data fetchers ─────────────────────────────────────────────────────────
 
 async function fetchHealth() {
   try {
@@ -268,13 +409,15 @@ async function fetchHealth() {
     const d = await r.json();
     document.getElementById('kpi-stars').textContent = fmt(d.github.starsLast7d);
     document.getElementById('kpi-forks').textContent = fmt(d.github.forksLast7d);
+    document.getElementById('kpi-issues').textContent = fmt(d.github.issuesOpenedLast7d);
+    document.getElementById('kpi-events').textContent = fmt(d.github.totalEventsTracked);
     document.getElementById('kpi-visitors').textContent = fmt(d.marketing.visitors);
     document.getElementById('kpi-gsc').textContent = fmt(d.marketing.gscClicks);
     document.getElementById('kpi-position').textContent = d.marketing.gscAvgPosition ? d.marketing.gscAvgPosition.toFixed(1) : '—';
     document.getElementById('kpi-ai').textContent = fmt(d.aiReferrals.total);
     document.getElementById('kpi-mqls').textContent = fmt(d.marketing.hubspotOrganicMqls);
     document.getElementById('kpi-wau').textContent = fmt(d.marketing.platformWau);
-  } catch (e) { /* server not ready yet */ }
+  } catch (e) {}
 }
 
 async function fetchGithubSignals() {
@@ -283,7 +426,6 @@ async function fetchGithubSignals() {
     if (!r.ok) return;
     const d = await r.json();
 
-    // Update live event feed
     const list = document.getElementById('event-list');
     let newEvents = false;
     for (const ev of (d.recentEvents || [])) {
@@ -305,14 +447,13 @@ async function fetchGithubSignals() {
       list.innerHTML = '';
     }
 
-    // Update star velocity chart
     const starStats = (d.dailyStats || []).filter(s => s.eventType === 'star' && s.action === 'created');
     if (starStats.length > 0 && starChart) {
       starChart.data.labels = starStats.map(s => (s.dateStr || s.date || '').substring(5));
       starChart.data.datasets[0].data = starStats.map(s => s.eventCount);
       starChart.update('none');
     }
-  } catch (e) { /* server not ready yet */ }
+  } catch (e) {}
 }
 
 async function fetchMarketingTrends() {
@@ -321,27 +462,49 @@ async function fetchMarketingTrends() {
     if (!r.ok) return;
     const d = await r.json();
 
-    // Traffic chart
-    if (d.weeklyTrend?.length > 0 && trafficChart) {
-      const labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
-      trafficChart.data.labels = labels;
-      trafficChart.data.datasets[0].data = d.weeklyTrend.map(w => w.visitors);
-      trafficChart.update('none');
+    if (d.weeklyTrend?.length > 0) {
+      // Traffic chart
+      if (trafficChart) {
+        trafficChart.data.labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
+        trafficChart.data.datasets[0].data = d.weeklyTrend.map(w => w.visitors);
+        trafficChart.update('none');
+      }
+      // GSC position chart
+      if (positionChart) {
+        positionChart.data.labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
+        positionChart.data.datasets[0].data = d.weeklyTrend.map(w => w.gscAvgPosition);
+        positionChart.options.scales.y.reverse = true;
+        positionChart.update('none');
+      }
+
+      // SEO health & AIO from latest snapshot with data
+      const latest = [...d.weeklyTrend].reverse().find(w => w.healthScore > 0);
+      if (latest) {
+        const score = latest.healthScore;
+        document.getElementById('kpi-health').textContent = score;
+        const bar = document.getElementById('health-bar');
+        bar.style.width = score + '%';
+        bar.style.background = healthColor(score);
+        document.getElementById('kpi-health-label').textContent = latest.snapshotDate.substring(0, 10);
+      }
+
+      // AIO & ranking from the latest snapshot (may have 0 if older)
+      const anyAio = [...d.weeklyTrend].reverse().find(w => w.aioLostClicks > 0);
+      if (anyAio) {
+        document.getElementById('kpi-aio').textContent = fmt(anyAio.aioLostClicks);
+        document.getElementById('kpi-aio-pct').textContent = anyAio.aioPct.toFixed(1) + '%';
+      }
+      const anyRanking = [...d.weeklyTrend].reverse().find(w => w.rankingImproved > 0 || w.rankingDeclined > 0);
+      if (anyRanking) {
+        document.getElementById('kpi-rank-up').textContent = fmt(anyRanking.rankingImproved);
+        document.getElementById('kpi-rank-down').textContent = fmt(anyRanking.rankingDeclined);
+      }
     }
 
-    // GSC position chart (lower is better)
-    if (d.weeklyTrend?.length > 0 && positionChart) {
-      positionChart.data.labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
-      positionChart.data.datasets[0].data = d.weeklyTrend.map(w => w.gscAvgPosition);
-      positionChart.options.scales.y.reverse = true;
-      positionChart.update('none');
-    }
-
-    // AI sources stacked bar chart
+    // AI stacked bar
     if (d.aiSourceBreakdown?.length > 0 && aiChart) {
       const allDates = [...new Set(d.aiSourceBreakdown.map(r => r.snapshotDate.substring(5)))];
       const allSources = [...new Set(d.aiSourceBreakdown.map(r => r.aiSource))];
-
       aiChart.data.labels = allDates;
       aiChart.data.datasets = allSources.map(source => {
         const byDate = {};
@@ -356,10 +519,33 @@ async function fetchMarketingTrends() {
       });
       aiChart.update('none');
     }
-  } catch (e) { /* server not ready yet */ }
+  } catch (e) {}
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
+async function fetchSystemStats() {
+  try {
+    const r = await fetch(`${API}/api/system-stats`);
+    if (!r.ok) return;
+    const d = await r.json();
+
+    document.getElementById('stat-rows').textContent = fmt(d.totalRows);
+    document.getElementById('stat-bytes').textContent = fmtBytes(d.totalBytes);
+
+    const gh = d.tables.find(t => t.table === 'GithubProcessed');
+    document.getElementById('stat-gh').textContent = fmt(gh?.rows ?? 0);
+
+    const mkt = (d.tables.find(t => t.table === 'WeeklySnapshot')?.rows ?? 0)
+              + (d.tables.find(t => t.table === 'AiReferralEvent')?.rows ?? 0);
+    document.getElementById('stat-mkt').textContent = fmt(mkt);
+
+    const mv = (d.tables.find(t => t.table === 'GithubDailyMetric')?.rows ?? 0)
+             + (d.tables.find(t => t.table === 'MarketingWeeklySummary')?.rows ?? 0)
+             + (d.tables.find(t => t.table === 'AiSourceWeekly')?.rows ?? 0);
+    document.getElementById('stat-mv').textContent = fmt(mv);
+  } catch (e) {}
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
 
 function init() {
   starChart     = makeLineChart('chart-stars',    'Stars / day', '#d29922');
@@ -367,14 +553,14 @@ function init() {
   positionChart = makeLineChart('chart-position', 'Avg Position','#3fb950');
   aiChart       = makeBarChart('chart-ai');
 
-  // Initial load
   fetchHealth();
   fetchGithubSignals();
   fetchMarketingTrends();
+  fetchSystemStats();
 
-  // Live polling — github signals every 10s, health every 30s, marketing every 5min
   setInterval(fetchGithubSignals, 10_000);
   setInterval(fetchHealth, 30_000);
+  setInterval(fetchSystemStats, 15_000);
   setInterval(fetchMarketingTrends, 300_000);
 
   setInterval(() => {
