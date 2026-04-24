@@ -349,9 +349,13 @@ function fmtBytes(b) {
 }
 
 function timeSince(iso) {
-  // Normalize to UTC — ClickHouse may return "2026-04-24 13:19:44" without Z
-  const str = iso.endsWith('Z') ? iso : iso.replace(' ', 'T') + 'Z';
+  if (!iso) return '—';
+  // Normalize to UTC — handle space separator, missing Z, and +00:00 offset
+  let str = iso.replace(' ', 'T');
+  if (str.endsWith('+00:00')) str = str.slice(0, -6) + 'Z';
+  if (!str.endsWith('Z') && !str.match(/[+-]\d{2}:\d{2}$/)) str += 'Z';
   const s = Math.floor((Date.now() - new Date(str)) / 1000);
+  if (!isFinite(s) || s < 0) return '—';
   if (s < 5) return 'just now';
   if (s < 60) return `${s}s ago`;
   if (s < 3600) return `${Math.floor(s/60)}m ago`;
@@ -415,7 +419,6 @@ async function fetchHealth() {
     document.getElementById('kpi-events').textContent = fmt(d.github.totalEventsTracked);
     document.getElementById('kpi-visitors').textContent = fmt(d.marketing.visitors);
     document.getElementById('kpi-gsc').textContent = fmt(d.marketing.gscClicks);
-    document.getElementById('kpi-position').textContent = d.marketing.gscAvgPosition ? d.marketing.gscAvgPosition.toFixed(1) : '—';
     document.getElementById('kpi-ai').textContent = fmt(d.aiReferrals.total);
     document.getElementById('kpi-mqls').textContent = fmt(d.marketing.hubspotOrganicMqls);
     document.getElementById('kpi-wau').textContent = fmt(d.marketing.platformWau);
@@ -508,10 +511,14 @@ async function fetchMarketingTrends() {
         positionChart.update('none');
       }
 
-      // GSC position KPI — most recent non-zero value
+      // GSC position KPI — most recent non-zero value with date label
       const latestPos = [...d.weeklyTrend].reverse().find(w => w.gscAvgPosition > 0);
       if (latestPos) {
         document.getElementById('kpi-position').textContent = latestPos.gscAvgPosition.toFixed(1);
+        const posEl = document.getElementById('kpi-position');
+        if (posEl && posEl.nextElementSibling) {
+          posEl.nextElementSibling.textContent = 'wk of ' + latestPos.snapshotDate.substring(0, 10);
+        }
       }
 
       // SEO health & AIO from latest snapshot with data
