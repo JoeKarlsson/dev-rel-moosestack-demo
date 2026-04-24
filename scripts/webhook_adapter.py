@@ -90,5 +90,5 @@ if __name__ == "__main__":
     print("GitHub webhook adapter running on :3001")
     print(f"Forwarding to: {MOOSE_INGEST_URL}")
     print()
-    print("Point your GitHub webhook at: https://<ngrok-id>.ngrok.io/github-webhook")
-    app.run(port=3001, debug=False)
+    print("Point your GitHub webhook at: https://devrel-webhook.joekarlsson.io/github-webhook")
+    app.run(host="0.0.0.0", port=3001, debug=False)
