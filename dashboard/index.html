@@ -349,8 +349,10 @@ function fmtBytes(b) {
 }
 
 function timeSince(iso) {
-  const d = new Date(iso);
-  const s = Math.floor((Date.now() - d) / 1000);
+  // Normalize to UTC — ClickHouse may return "2026-04-24 13:19:44" without Z
+  const str = iso.endsWith('Z') ? iso : iso.replace(' ', 'T') + 'Z';
+  const s = Math.floor((Date.now() - new Date(str)) / 1000);
+  if (s < 5) return 'just now';
   if (s < 60) return `${s}s ago`;
   if (s < 3600) return `${Math.floor(s/60)}m ago`;
   return `${Math.floor(s/3600)}h ago`;
@@ -420,32 +422,61 @@ async function fetchHealth() {
   } catch (e) {}
 }
 
+function addEventToFeed(ev) {
+  const list = document.getElementById('event-list');
+  if (seenEventIds.has(ev.eventId)) return;
+  seenEventIds.add(ev.eventId);
+
+  // Clear the "Waiting..." placeholder on first real event
+  if (list.firstChild?.textContent?.includes('Waiting')) list.innerHTML = '';
+
+  const li = document.createElement('li');
+  li.style.opacity = '0';
+  li.style.transition = 'opacity 0.3s';
+  li.innerHTML = `
+    <span class="badge ${badgeClass(ev.eventType)}">${ev.eventType}</span>
+    <span class="event-actor">${ev.actor}</span>
+    <span style="color:#8b949e">${ev.action}</span>
+    <span style="color:#c9d1d9">${ev.repo}</span>
+    <span class="event-time">${timeSince(ev.timestamp)}</span>
+  `;
+  list.insertBefore(li, list.firstChild);
+  requestAnimationFrame(() => { li.style.opacity = '1'; });
+  if (list.children.length > 30) list.removeChild(list.lastChild);
+}
+
+function connectSSE() {
+  const es = new EventSource('http://localhost:3001/events');
+
+  es.onopen = () => {
+    document.getElementById('status-dot').style.background = '#3fb950';
+  };
+
+  es.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'connected') return;
+    addEventToFeed(ev);
+    // Refresh KPIs so star count etc. updates shortly after
+    setTimeout(fetchHealth, 2000);
+  };
+
+  es.onerror = () => {
+    document.getElementById('status-dot').style.background = '#f85149';
+    es.close();
+    // Reconnect after 5s
+    setTimeout(connectSSE, 5000);
+  };
+}
+
 async function fetchGithubSignals() {
+  // Used for initial feed load + chart data — not the live event stream
   try {
     const r = await fetch(`${API}/api/github-signals?windowDays=30`);
     if (!r.ok) return;
     const d = await r.json();
 
-    const list = document.getElementById('event-list');
-    let newEvents = false;
-    for (const ev of (d.recentEvents || [])) {
-      if (seenEventIds.has(ev.eventId)) continue;
-      seenEventIds.add(ev.eventId);
-      newEvents = true;
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <span class="badge ${badgeClass(ev.eventType)}">${ev.eventType}</span>
-        <span class="event-actor">${ev.actor}</span>
-        <span style="color:#8b949e">${ev.action}</span>
-        <span style="color:#c9d1d9">${ev.repo}</span>
-        <span class="event-time">${timeSince(ev.timestamp)}</span>
-      `;
-      list.insertBefore(li, list.firstChild);
-      if (list.children.length > 30) list.removeChild(list.lastChild);
-    }
-    if (newEvents && list.firstChild?.textContent?.includes('Waiting')) {
-      list.innerHTML = '';
-    }
+    // Backfill feed with recent events we might have missed
+    for (const ev of (d.recentEvents || [])) addEventToFeed(ev);
 
     const starStats = (d.dailyStats || []).filter(s => s.eventType === 'star' && s.action === 'created');
     if (starStats.length > 0 && starChart) {
@@ -554,11 +585,13 @@ function init() {
   aiChart       = makeBarChart('chart-ai');
 
   fetchHealth();
-  fetchGithubSignals();
+  fetchGithubSignals();   // backfill feed + star chart
   fetchMarketingTrends();
   fetchSystemStats();
 
-  setInterval(fetchGithubSignals, 10_000);
+  connectSSE();           // live event push — no polling needed for the feed
+
+  setInterval(fetchGithubSignals, 60_000);  // refresh chart data every 60s
   setInterval(fetchHealth, 30_000);
   setInterval(fetchSystemStats, 15_000);
   setInterval(fetchMarketingTrends, 300_000);

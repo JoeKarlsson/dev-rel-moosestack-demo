@@ -82,7 +82,7 @@ export const GithubSignalsApi = new Api<GithubSignalsParams, GithubSignalsRespon
     const recentCursor = await client.query.execute<RecentEvent>(
       sql.statement`SELECT
         toString(${pCols.eventId}) as eventId,
-        toString(${pCols.timestamp}) as timestamp,
+        formatDateTime(${pCols.timestamp}, '%Y-%m-%dT%H:%i:%SZ', 'UTC') as timestamp,
         ${pCols.eventType},
         ${pCols.repo},
         ${pCols.actor},
