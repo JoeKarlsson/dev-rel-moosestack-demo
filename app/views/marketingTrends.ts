@@ -41,6 +41,11 @@ interface MarketingWeeklySummary {
   hubspotOrganicMqls: number & typia.tags.Type<"int64">;
   aiTotalReferrals: number & typia.tags.Type<"int64">;
   platformWau: number & typia.tags.Type<"int64">;
+  healthScore: number & typia.tags.Type<"int64">;
+  aioLostClicks: number & typia.tags.Type<"int64">;
+  aioPct: number;
+  rankingImproved: number & typia.tags.Type<"int64">;
+  rankingDeclined: number & typia.tags.Type<"int64">;
 }
 
 const snapshotTable = WeeklySnapshotPipeline.table!;
@@ -56,10 +61,15 @@ export const MarketingWeeklySummaryMV = new MaterializedView<MarketingWeeklySumm
     ${snapCols.site},
     sum(${snapCols.visitors}) as visitors,
     sum(${snapCols.gscClicks}) as gscClicks,
-    avg(${snapCols.gscAvgPosition}) as gscAvgPosition,
+    anyIf(${snapCols.gscAvgPosition}, ${snapCols.gscAvgPosition} > 0) as gscAvgPosition,
     sum(${snapCols.hubspotOrganicMqls}) as hubspotOrganicMqls,
     sum(${snapCols.aiTotalReferrals}) as aiTotalReferrals,
-    sum(${snapCols.platformWau}) as platformWau
+    sum(${snapCols.platformWau}) as platformWau,
+    max(${snapCols.healthScore}) as healthScore,
+    max(${snapCols.aioLostClicks}) as aioLostClicks,
+    max(${snapCols.aioPct}) as aioPct,
+    max(${snapCols.rankingImproved}) as rankingImproved,
+    max(${snapCols.rankingDeclined}) as rankingDeclined
   FROM ${snapshotTable}
   GROUP BY ${snapCols.snapshotDate}, ${snapCols.site}
   `,

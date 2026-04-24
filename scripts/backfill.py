@@ -130,8 +130,17 @@ def extract_gsc(d: dict) -> dict:
     )
     avg_position = (
         g.get("avg_position") or g.get("position") or g.get("avg_position_w1")
-        or (g.get("w1") or {}).get("avg_position") or g.get("avg_position_m1") or 0.0
+        or (g.get("w1") or {}).get("avg_position")
+        or (g.get("w1_totals") or {}).get("avg_position")
+        or g.get("avg_position_m1") or 0.0
     )
+    # Clicks/impressions from w1_totals block (2026-04-18 format)
+    w1_totals = g.get("w1_totals") or {}
+    if w1_totals:
+        clicks = clicks or w1_totals.get("clicks", 0)
+        impressions = impressions or w1_totals.get("impressions", 0)
+        ctr = ctr or w1_totals.get("avg_ctr", 0.0)
+        avg_position = avg_position or w1_totals.get("avg_position", 0.0)
     # Totals block used by HTML generator
     totals_w1 = (g.get("totals") or g.get("aggregate") or {}).get("w1", {})
     if totals_w1:

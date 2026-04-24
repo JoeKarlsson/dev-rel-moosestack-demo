@@ -127,6 +127,11 @@ interface MarketingTrendRow {
   hubspotOrganicMqls: number;
   aiTotalReferrals: number;
   platformWau: number;
+  healthScore: number;
+  aioLostClicks: number;
+  aioPct: number;
+  rankingImproved: number;
+  rankingDeclined: number;
 }
 
 interface AiSourceRow {
@@ -163,7 +168,12 @@ export const MarketingTrendsApi = new Api<MarketingTrendsParams, MarketingTrends
         ${sCols.gscAvgPosition},
         ${sCols.hubspotOrganicMqls},
         ${sCols.aiTotalReferrals},
-        ${sCols.platformWau}
+        ${sCols.platformWau},
+        ${sCols.healthScore},
+        ${sCols.aioLostClicks},
+        ${sCols.aioPct},
+        ${sCols.rankingImproved},
+        ${sCols.rankingDeclined}
       FROM ${summaryTable}
       WHERE ${sCols.site} = ${site}
       ORDER BY ${sCols.snapshotDate} ASC

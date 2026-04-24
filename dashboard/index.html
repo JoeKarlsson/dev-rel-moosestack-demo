@@ -500,12 +500,18 @@ async function fetchMarketingTrends() {
         trafficChart.data.datasets[0].data = d.weeklyTrend.map(w => w.visitors);
         trafficChart.update('none');
       }
-      // GSC position chart
+      // GSC position chart — null for missing weeks so Chart.js shows gaps instead of zeros
       if (positionChart) {
         positionChart.data.labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
-        positionChart.data.datasets[0].data = d.weeklyTrend.map(w => w.gscAvgPosition);
+        positionChart.data.datasets[0].data = d.weeklyTrend.map(w => w.gscAvgPosition > 0 ? w.gscAvgPosition : null);
         positionChart.options.scales.y.reverse = true;
         positionChart.update('none');
+      }
+
+      // GSC position KPI — most recent non-zero value
+      const latestPos = [...d.weeklyTrend].reverse().find(w => w.gscAvgPosition > 0);
+      if (latestPos) {
+        document.getElementById('kpi-position').textContent = latestPos.gscAvgPosition.toFixed(1);
       }
 
       // SEO health & AIO from latest snapshot with data
