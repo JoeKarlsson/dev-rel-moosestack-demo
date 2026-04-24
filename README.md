@@ -1,36 +1,127 @@
-This is a [Moose](https://docs.fiveonefour.com/moose) project bootstrapped with [`moose init`](https://docs.fiveonefour.com/moose/reference/moose-cli#init) or [`sloan init`](https://docs.fiveonefour.com/sloan/cli-reference#init)
+# Dev Rel Command Center
 
-<a href="https://docs.fiveonefour.com/moose/"><img src="https://raw.githubusercontent.com/514-labs/moose/main/logo-m-light.png" alt="moose logo" height="100px"></a>
+A real-time developer relations analytics dashboard built on [MooseStack](https://docs.fiveonefour.com/moose) + ClickHouse. Combines live GitHub activity streaming with 18 weeks of historical marketing data into a single unified view.
 
-[![NPM Version](https://img.shields.io/npm/v/%40514labs%2Fmoose-cli?logo=npm)](https://www.npmjs.com/package/@514labs/moose-cli?activeTab=readme)
-[![Moose Community](https://img.shields.io/badge/slack-moose_community-purple.svg?logo=slack)](https://join.slack.com/t/moose-community/shared_invite/zt-2fjh5n3wz-cnOmM9Xe9DYAgQrNu8xKxg)
-[![Docs](https://img.shields.io/badge/quick_start-docs-blue.svg)](https://docs.fiveonefour.com/moose/getting-started/quickstart)
-[![MIT license](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![MooseStack](https://img.shields.io/badge/built_with-MooseStack-5b21b6)](https://docs.fiveonefour.com/moose)
+[![ClickHouse](https://img.shields.io/badge/database-ClickHouse-FFCC01)](https://clickhouse.com)
 
-[Moose](https://docs.fiveonefour.com/moose) is an open-source data engineering framework designed to drastically accelerate AI-enabled software developers, as you prototype and scale data-intensive features and applications.
+## What It Does
 
-# Get started with Moose
+**Real-time layer** — GitHub webhooks flow into ClickHouse in under a second. Star, fork, and issue events appear in the live feed as they happen.
 
-Get up and running with your own Moose project in minutes by using our [Quick Start Tutorial](https://docs.fiveonefour.com/moose/getting-started/quickstart). We also have our [Docs](https://docs.fiveonefour.com/moose) where you can pick your path, learn more about Moose, and learn what types of applications can be built with Moose.
+**Historical layer** — 18 weeks of real CloudQuery marketing snapshots: web traffic (Plausible), search rankings (GSC), AI referrals (ChatGPT · Claude · Perplexity), HubSpot pipeline MQLs, and platform WAU.
 
-# Beta release
+**Unified APIs** — Three REST endpoints query across both layers simultaneously. ClickHouse handles mixed real-time + historical queries in milliseconds.
 
-Moose is beta software and is in active development. Multiple public companies across the globe are using Moose in production. We'd love for you to [get your hands on it and try it out](https://docs.fiveonefour.com/moose/getting-started/quickstart). If you're interested in using Moose in production, or if you just want to chat, you can reach us at [hello@moosejs.dev](mailto:hello@moosejs.dev) or in the Moose developer community below.
+## Architecture
 
-## Community
+```
+GitHub webhook → POST /ingest/GithubEvent
+                    └→ transform (fan-out)
+                        └→ GithubProcessed table
+                            └→ GithubDailyMV (star velocity)
+                                └→ /api/github-signals
 
-You can join the Moose community [on Slack](https://join.slack.com/t/moose-community/shared_invite/zt-2fjh5n3wz-cnOmM9Xe9DYAgQrNu8xKxg). Check out the [MooseStack repo on GitHub](https://github.com/514-labs/moosestack).
+Python backfill → POST /ingest/WeeklySnapshot   (18 weeks, Feb–Apr 2026)
+               → POST /ingest/AiReferralEvent   (per AI source per week)
+                    └→ MarketingWeeklySummaryMV
+                    └→ AiSourceWeeklyMV
+                        └→ /api/marketing-trends
 
-# Deploy with 514 Hosting
+Both layers → /api/devrel-health (unified summary KPIs)
+           → dashboard/index.html  (Chart.js, polls every 10s)
+```
 
-514 Hosting is a branch-native control plane for cloud OLAP workloads.
+## Prerequisites
 
-https://fiveonefour.boreal.cloud
+- [MooseStack CLI](https://docs.fiveonefour.com/moose/getting-started/quickstart): `npm i -g @514labs/moose-cli`
+- Docker Desktop (running)
+- Python 3.9+ with `requests` (`pip install requests`)
+- Flask for the webhook adapter (`pip install flask requests`)
 
-# Contributing
+## Running the Stack
 
-We welcome contributions to Moose! Please check out the [contribution guidelines](https://github.com/514-labs/moose/blob/main/CONTRIBUTING.md).
+### 1. Start MooseStack
 
-# Made by 514
+```bash
+moose dev
+```
 
-Our mission at [fiveonefour](https://www.fiveonefour.com/) is to bring incredible developer experiences to the data stack. If you’re interested in enterprise solutions, commercial support, or design partnerships, then we’d love to chat with you: [hello@moosejs.dev](mailto:hello@moosejs.dev)
+Starts ClickHouse (port 18123), Redpanda streaming, Temporal workflows, and the API server on `localhost:4000`. All ingest endpoints and APIs register automatically from the TypeScript definitions.
+
+### 2. Load historical data
+
+```bash
+python scripts/backfill.py
+```
+
+Reads 18 JSON snapshot files and POSTs them to the ingest endpoints. Idempotent — safe to re-run.
+
+### 3. Start the webhook adapter (for live GitHub events)
+
+```bash
+python scripts/webhook_adapter.py
+```
+
+Runs a thin Flask proxy on port 3001 that receives GitHub webhooks and forwards them to MooseStack, extracting the `X-GitHub-Event` header that GitHub puts outside the body.
+
+### 4. Serve the dashboard
+
+```bash
+cd dashboard && python3 -m http.server 3000
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## GitHub Webhook Setup (for live demo)
+
+1. Create a demo GitHub repo
+2. Expose port 3001 via ngrok: `ngrok http 3001`
+3. In your repo → **Settings → Webhooks → Add webhook**:
+   - URL: `https://<ngrok-id>.ngrok.io/webhook`
+   - Content type: `application/json`
+   - Events: Stars, Forks, Issues, Pull requests
+4. Star/fork the repo — events appear in the dashboard within seconds
+
+## API Endpoints
+
+| Endpoint | Cache | Description |
+|----------|-------|-------------|
+| `GET /api/devrel-health` | 60s | KPI summary: GitHub velocity + latest marketing snapshot + top AI sources |
+| `GET /api/github-signals?windowDays=30` | 30s | Daily star/fork/issue stats + live event feed |
+| `GET /api/marketing-trends?site=cloudquery.io` | 1h | Weekly traffic trend + AI source breakdown |
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `app/ingest/githubModels.ts` | GitHub event + normalized processed model |
+| `app/ingest/githubTransforms.ts` | Fan-out transform: GithubEvent → GithubProcessed |
+| `app/ingest/marketingModels.ts` | WeeklySnapshot + AiReferralEvent models |
+| `app/views/githubMetrics.ts` | GithubDailyMV — star/fork/issue counts by day |
+| `app/views/marketingTrends.ts` | MarketingWeeklySummaryMV + AiSourceWeeklyMV |
+| `app/apis/devrel.ts` | Three REST APIs with MooseCache cache-aside |
+| `app/workflows/snapshotSync.ts` | Weekly Temporal workflow to refresh snapshots |
+| `scripts/backfill.py` | One-time backfill of 18 historical snapshots |
+| `scripts/webhook_adapter.py` | Flask proxy: GitHub → MooseStack ingest |
+| `dashboard/index.html` | Single-file dashboard (no build step) |
+
+## Why This Stack
+
+**Why ClickHouse?** Columnar storage — the 18-week aggregate query that powers the AI referrals chart runs in milliseconds regardless of row count. Mixed real-time + historical queries in the same SQL.
+
+**Why streaming?** GitHub stars are a leading indicator. They appear 3–7 days before traffic shows up in GSC. Streaming gives you that signal in real time rather than waiting for the next weekly snapshot.
+
+**Why MooseStack?** The TypeScript interface IS the pipeline definition. No YAML, no config files, no separate schema registry. The type is the schema — add a field to the interface and MooseStack handles the migration.
+
+## Demo Script
+
+1. `moose dev` — show ClickHouse + Redpanda + Temporal spinning up, point out auto-generated ingest endpoints at `/ingest/GithubEvent`, `/ingest/WeeklySnapshot`
+2. `python scripts/backfill.py` — 18 weeks of real data loads in seconds; explain the schema normalization challenge across 6+ format variants
+3. `moose query "SELECT aiSource, SUM(visitors) FROM AiReferralEvent_0_0 GROUP BY aiSource ORDER BY SUM(visitors) DESC"` — show `claude.ai` appearing as a referral source in March 2026 and growing (GEO becoming real)
+4. Set up ngrok, star the repo — watch the event appear in the live feed
+5. Open [http://localhost:3000](http://localhost:3000) — walk through the unified view
+
+---
+
+Built with [MooseStack](https://docs.fiveonefour.com/moose) by [514 labs](https://www.fiveonefour.com/).

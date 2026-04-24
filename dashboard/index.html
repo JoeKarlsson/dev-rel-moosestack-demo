@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Rel Command Center</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid #21262d;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header h1 { font-size: 18px; font-weight: 600; }
+    header .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #1f6feb;
+      color: #fff;
+      font-weight: 500;
+    }
+    #status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #3fb950;
+      animation: pulse 2s infinite;
+      margin-left: auto;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    main { padding: 24px 32px; display: grid; gap: 24px; }
+
+    /* KPI row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    .kpi {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .kpi .label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: .05em; }
+    .kpi .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+    .kpi .sub { font-size: 11px; color: #8b949e; margin-top: 2px; }
+    .kpi.live .label::after { content: " ●"; color: #3fb950; }
+
+    /* Two-column charts */
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card h2 { font-size: 13px; font-weight: 600; margin-bottom: 16px; color: #c9d1d9; }
+    .card canvas { max-height: 220px; }
+
+    /* Live feed */
+    .feed {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .feed h2 { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: #c9d1d9; }
+    #event-list { list-style: none; max-height: 220px; overflow-y: auto; }
+    #event-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 13px;
+    }
+    #event-list li:last-child { border-bottom: none; }
+    .badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge.star    { background: #3d2c00; color: #d29922; }
+    .badge.fork    { background: #0d2d0d; color: #3fb950; }
+    .badge.issues  { background: #1c1c3d; color: #a78bfa; }
+    .badge.default { background: #21262d; color: #8b949e; }
+    .event-actor { color: #79c0ff; }
+    .event-time  { color: #8b949e; font-size: 11px; margin-left: auto; }
+
+    #last-updated { font-size: 11px; color: #8b949e; padding: 8px 32px 16px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Dev Rel Command Center</h1>
+  <span class="tag">MooseStack + ClickHouse</span>
+  <div id="status-dot" title="Live"></div>
+</header>
+
+<main>
+  <!-- KPI row -->
+  <div class="kpi-row">
+    <div class="kpi live">
+      <div class="label">Stars (7d)</div>
+      <div class="value" id="kpi-stars">—</div>
+      <div class="sub">GitHub</div>
+    </div>
+    <div class="kpi live">
+      <div class="label">Forks (7d)</div>
+      <div class="value" id="kpi-forks">—</div>
+      <div class="sub">GitHub</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Weekly Visitors</div>
+      <div class="value" id="kpi-visitors">—</div>
+      <div class="sub">Latest snapshot</div>
+    </div>
+    <div class="kpi">
+      <div class="label">GSC Clicks</div>
+      <div class="value" id="kpi-gsc">—</div>
+      <div class="sub">Latest snapshot</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Avg Position</div>
+      <div class="value" id="kpi-position">—</div>
+      <div class="sub">Google Search</div>
+    </div>
+    <div class="kpi">
+      <div class="label">AI Referrals</div>
+      <div class="value" id="kpi-ai">—</div>
+      <div class="sub">ChatGPT · Claude · Perplexity</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Organic MQLs</div>
+      <div class="value" id="kpi-mqls">—</div>
+      <div class="sub">HubSpot</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Platform WAU</div>
+      <div class="value" id="kpi-wau">—</div>
+      <div class="sub">Weekly active users</div>
+    </div>
+  </div>
+
+  <!-- Live event feed -->
+  <div class="feed">
+    <h2>Live GitHub Events</h2>
+    <ul id="event-list"><li style="color:#8b949e">Waiting for events...</li></ul>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts">
+    <div class="card">
+      <h2>Star Velocity (30 days)</h2>
+      <canvas id="chart-stars"></canvas>
+    </div>
+    <div class="card">
+      <h2>Weekly Traffic</h2>
+      <canvas id="chart-traffic"></canvas>
+    </div>
+    <div class="card">
+      <h2>GSC Avg Position</h2>
+      <canvas id="chart-position"></canvas>
+    </div>
+    <div class="card">
+      <h2>AI Referrals by Source</h2>
+      <canvas id="chart-ai"></canvas>
+    </div>
+  </div>
+</main>
+
+<div id="last-updated"></div>
+
+<script>
+const API = 'http://localhost:4000';
+const COLORS = {
+  'chatgpt.com':    '#10a37f',
+  'claude.ai':      '#cc785c',
+  'perplexity.ai':  '#20b2d4',
+  'kagi.com':       '#a78bfa',
+  'default':        '#58a6ff',
+};
+
+// Chart instances
+let starChart, trafficChart, positionChart, aiChart;
+let seenEventIds = new Set();
+
+function fmt(n) {
+  if (n == null || n === '') return '—';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+
+function timeSince(iso) {
+  const d = new Date(iso);
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
+}
+
+function badgeClass(eventType) {
+  return ['star','fork','issues'].includes(eventType) ? eventType : 'default';
+}
+
+// ── Chart helpers ──────────────────────────────────────────────────────────
+
+function makeLineChart(id, label, color) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [{ label, data: [], borderColor: color, backgroundColor: color + '22', tension: 0.3, fill: true, pointRadius: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8b949e', maxTicksLimit: 6, font: { size: 10 } }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function makeBarChart(id) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'bar',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: '#8b949e', font: { size: 10 } } } },
+      scales: {
+        x: { stacked: true, ticks: { color: '#8b949e', maxTicksLimit: 6, font: { size: 10 } }, grid: { color: '#21262d' } },
+        y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+// ── Data fetchers ──────────────────────────────────────────────────────────
+
+async function fetchHealth() {
+  try {
+    const r = await fetch(`${API}/api/devrel-health`);
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('kpi-stars').textContent = fmt(d.github.starsLast7d);
+    document.getElementById('kpi-forks').textContent = fmt(d.github.forksLast7d);
+    document.getElementById('kpi-visitors').textContent = fmt(d.marketing.visitors);
+    document.getElementById('kpi-gsc').textContent = fmt(d.marketing.gscClicks);
+    document.getElementById('kpi-position').textContent = d.marketing.gscAvgPosition ? d.marketing.gscAvgPosition.toFixed(1) : '—';
+    document.getElementById('kpi-ai').textContent = fmt(d.aiReferrals.total);
+    document.getElementById('kpi-mqls').textContent = fmt(d.marketing.hubspotOrganicMqls);
+    document.getElementById('kpi-wau').textContent = fmt(d.marketing.platformWau);
+  } catch (e) { /* server not ready yet */ }
+}
+
+async function fetchGithubSignals() {
+  try {
+    const r = await fetch(`${API}/api/github-signals?windowDays=30`);
+    if (!r.ok) return;
+    const d = await r.json();
+
+    // Update live event feed
+    const list = document.getElementById('event-list');
+    let newEvents = false;
+    for (const ev of (d.recentEvents || [])) {
+      if (seenEventIds.has(ev.eventId)) continue;
+      seenEventIds.add(ev.eventId);
+      newEvents = true;
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <span class="badge ${badgeClass(ev.eventType)}">${ev.eventType}</span>
+        <span class="event-actor">${ev.actor}</span>
+        <span style="color:#8b949e">${ev.action}</span>
+        <span style="color:#c9d1d9">${ev.repo}</span>
+        <span class="event-time">${timeSince(ev.timestamp)}</span>
+      `;
+      list.insertBefore(li, list.firstChild);
+      if (list.children.length > 30) list.removeChild(list.lastChild);
+    }
+    if (newEvents && list.firstChild?.textContent?.includes('Waiting')) {
+      list.innerHTML = '';
+    }
+
+    // Update star velocity chart
+    const starStats = (d.dailyStats || []).filter(s => s.eventType === 'star' && s.action === 'created');
+    if (starStats.length > 0 && starChart) {
+      starChart.data.labels = starStats.map(s => (s.dateStr || s.date || '').substring(5));
+      starChart.data.datasets[0].data = starStats.map(s => s.eventCount);
+      starChart.update('none');
+    }
+  } catch (e) { /* server not ready yet */ }
+}
+
+async function fetchMarketingTrends() {
+  try {
+    const r = await fetch(`${API}/api/marketing-trends?site=cloudquery.io&limit=20`);
+    if (!r.ok) return;
+    const d = await r.json();
+
+    // Traffic chart
+    if (d.weeklyTrend?.length > 0 && trafficChart) {
+      const labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
+      trafficChart.data.labels = labels;
+      trafficChart.data.datasets[0].data = d.weeklyTrend.map(w => w.visitors);
+      trafficChart.update('none');
+    }
+
+    // GSC position chart (lower is better)
+    if (d.weeklyTrend?.length > 0 && positionChart) {
+      positionChart.data.labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
+      positionChart.data.datasets[0].data = d.weeklyTrend.map(w => w.gscAvgPosition);
+      positionChart.options.scales.y.reverse = true;
+      positionChart.update('none');
+    }
+
+    // AI sources stacked bar chart
+    if (d.aiSourceBreakdown?.length > 0 && aiChart) {
+      const allDates = [...new Set(d.aiSourceBreakdown.map(r => r.snapshotDate.substring(5)))];
+      const allSources = [...new Set(d.aiSourceBreakdown.map(r => r.aiSource))];
+
+      aiChart.data.labels = allDates;
+      aiChart.data.datasets = allSources.map(source => {
+        const byDate = {};
+        d.aiSourceBreakdown.filter(r => r.aiSource === source).forEach(r => {
+          byDate[r.snapshotDate.substring(5)] = r.totalVisitors;
+        });
+        return {
+          label: source,
+          data: allDates.map(d => byDate[d] || 0),
+          backgroundColor: COLORS[source] || COLORS.default,
+        };
+      });
+      aiChart.update('none');
+    }
+  } catch (e) { /* server not ready yet */ }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+
+function init() {
+  starChart     = makeLineChart('chart-stars',    'Stars / day', '#d29922');
+  trafficChart  = makeLineChart('chart-traffic',  'Visitors',    '#58a6ff');
+  positionChart = makeLineChart('chart-position', 'Avg Position','#3fb950');
+  aiChart       = makeBarChart('chart-ai');
+
+  // Initial load
+  fetchHealth();
+  fetchGithubSignals();
+  fetchMarketingTrends();
+
+  // Live polling — github signals every 10s, health every 30s, marketing every 5min
+  setInterval(fetchGithubSignals, 10_000);
+  setInterval(fetchHealth, 30_000);
+  setInterval(fetchMarketingTrends, 300_000);
+
+  setInterval(() => {
+    document.getElementById('last-updated').textContent =
+      `Last updated: ${new Date().toLocaleTimeString()}`;
+  }, 5_000);
+}
+
+init();
+</script>
+</body>
+</html>
