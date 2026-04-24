@@ -305,14 +305,26 @@
       <canvas id="chart-stars"></canvas>
     </div>
     <div class="card">
+      <h2>GitHub Event Types</h2>
+      <canvas id="chart-event-types"></canvas>
+    </div>
+    <div class="card">
       <h2>Weekly Traffic</h2>
       <canvas id="chart-traffic"></canvas>
+    </div>
+    <div class="card">
+      <h2>GSC Clicks</h2>
+      <canvas id="chart-gsc-clicks"></canvas>
     </div>
     <div class="card">
       <h2>GSC Avg Position</h2>
       <canvas id="chart-position"></canvas>
     </div>
     <div class="card">
+      <h2>Organic MQLs</h2>
+      <canvas id="chart-mqls"></canvas>
+    </div>
+    <div class="card" style="grid-column: 1 / -1">
       <h2>AI Referrals by Source</h2>
       <canvas id="chart-ai"></canvas>
     </div>
@@ -331,7 +343,7 @@ const COLORS = {
   'default':        '#58a6ff',
 };
 
-let starChart, trafficChart, positionChart, aiChart;
+let starChart, trafficChart, positionChart, aiChart, eventTypeChart, gscClicksChart, mqlChart;
 let seenEventIds = new Set();
 
 function fmt(n) {
@@ -401,6 +413,23 @@ function makeBarChart(id) {
       scales: {
         x: { stacked: true, ticks: { color: '#8b949e', maxTicksLimit: 6, font: { size: 10 } }, grid: { color: '#21262d' } },
         y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function makeDonutChart(id) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: [],
+      datasets: [{ data: [], backgroundColor: ['#d29922', '#58a6ff', '#3fb950', '#cc785c', '#a78bfa'] }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 10 }, padding: 8 } },
       },
     },
   });
@@ -487,6 +516,18 @@ async function fetchGithubSignals() {
       starChart.data.datasets[0].data = starStats.map(s => s.eventCount);
       starChart.update('none');
     }
+
+    // Event type donut — aggregate counts by eventType across the window
+    if (eventTypeChart && d.dailyStats?.length > 0) {
+      const totals = {};
+      for (const s of d.dailyStats) {
+        totals[s.eventType] = (totals[s.eventType] || 0) + s.eventCount;
+      }
+      const labels = Object.keys(totals).sort();
+      eventTypeChart.data.labels = labels;
+      eventTypeChart.data.datasets[0].data = labels.map(l => totals[l]);
+      eventTypeChart.update('none');
+    }
   } catch (e) {}
 }
 
@@ -509,6 +550,18 @@ async function fetchMarketingTrends() {
         positionChart.data.datasets[0].data = d.weeklyTrend.map(w => w.gscAvgPosition > 0 ? w.gscAvgPosition : null);
         positionChart.options.scales.y.reverse = true;
         positionChart.update('none');
+      }
+      // GSC clicks over time
+      if (gscClicksChart) {
+        gscClicksChart.data.labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
+        gscClicksChart.data.datasets[0].data = d.weeklyTrend.map(w => w.gscClicks || null);
+        gscClicksChart.update('none');
+      }
+      // Organic MQL trend
+      if (mqlChart) {
+        mqlChart.data.labels = d.weeklyTrend.map(w => w.snapshotDate.substring(5));
+        mqlChart.data.datasets[0].data = d.weeklyTrend.map(w => w.hubspotOrganicMqls || null);
+        mqlChart.update('none');
       }
 
       // GSC position KPI — most recent non-zero value with date label
@@ -592,10 +645,13 @@ async function fetchSystemStats() {
 // ── Init ─────────────────────────────────────────────────────────────────
 
 function init() {
-  starChart     = makeLineChart('chart-stars',    'Stars / day', '#d29922');
-  trafficChart  = makeLineChart('chart-traffic',  'Visitors',    '#58a6ff');
-  positionChart = makeLineChart('chart-position', 'Avg Position','#3fb950');
-  aiChart       = makeBarChart('chart-ai');
+  starChart      = makeLineChart('chart-stars',       'Stars / day',  '#d29922');
+  trafficChart   = makeLineChart('chart-traffic',     'Visitors',     '#58a6ff');
+  positionChart  = makeLineChart('chart-position',    'Avg Position', '#3fb950');
+  aiChart        = makeBarChart('chart-ai');
+  eventTypeChart = makeDonutChart('chart-event-types');
+  gscClicksChart = makeLineChart('chart-gsc-clicks',  'GSC Clicks',   '#a78bfa');
+  mqlChart       = makeLineChart('chart-mqls',        'Organic MQLs', '#f0883e');
 
   fetchHealth();
   fetchGithubSignals();   // backfill feed + star chart
